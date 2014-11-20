@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Validation Workshop</title>
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/moon.css">
+	</head>
+
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<!--
+Motivation for the Validation pattern
+- algebraic data types - Product (e.g. Tuple), Sum (e.g. Either)
+- something might be null! (Option<Something>)
+- but why? something might fail! (Either<Error,Something>)
+- what if two things might fail? (Validation<List<Error>,Something>)
+- composability
+- apply input to list of validation functions and map on the result (e.g. parsing, multiplexing)
+
+Implement Validation
+- to the code!
+- we'll do this as a group - swap on the keyboard every 5 mins or so, but take advice from the whole group, don't hold back.
+- the primary goal is to get the tests passing
+- once that is done, we can go back and improve implementations if we want to
+				-->
+				<section>
+					<h2>Validation Workshop</h2>
+				</section>
+				<section>
+					<h2>Why are we here?</h2>
+					<p>
+						<ul>
+							<li>improve our skills with Java 8 lambdas</li>
+							<li>improve our ability to recognise common functional patterns</li>
+							<li>implement a particular pattern as an exercise</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>What is FP?</h2>
+					<p>
+						As a definition:
+						<ul>
+							<li>programming with functions</li>
+							<li>referential transparency/equational reasoning</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>What is FP?</h2>
+					<p>
+						What do we mean to do? Stuff like:
+						<ul>
+							<li>data transformations</li>
+							<li>use meaningful types</li>
+							<li>reduce scope of nasty bits</li>
+							<li>improve modularity, reuseablility, testability</li>
+							<li>local reasoning</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>Workshop goal</h2>
+					<p>
+						We will implement Validation. Let's find out what that means.
+					</p>
+				</section>
+			</div>
+		</div>
+
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: false,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: 'moon',
+				transition: 'none'
+			});
+
+		</script>
+
+	</body>
+</html>
