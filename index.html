@@ -7,20 +7,13 @@
 
 		<link rel="stylesheet" href="css/reveal.min.css">
 		<link rel="stylesheet" href="css/theme/moon.css">
+		<link rel="stylesheet" href="css/zenburn.css">
 	</head>
 
 	<body>
 		<div class="reveal">
 			<div class="slides">
 				<!--
-Motivation for the Validation pattern
-- algebraic data types - Product (e.g. Tuple), Sum (e.g. Either)
-- something might be null! (Option<Something>)
-- but why? something might fail! (Either<Error,Something>)
-- what if two things might fail? (Validation<List<Error>,Something>)
-- composability
-- apply input to list of validation functions and map on the result (e.g. parsing, multiplexing)
-
 Implement Validation
 - to the code!
 - we'll do this as a group - swap on the keyboard every 5 mins or so, but take advice from the whole group, don't hold back.
@@ -36,7 +29,7 @@ Implement Validation
 						<ul>
 							<li>improve our skills with Java 8 lambdas</li>
 							<li>improve our ability to recognise common functional patterns</li>
-							<li>implement a particular pattern as an exercise</li>
+							<li>implement a functional pattern as an exercise</li>
 						</ul>
 					</p>
 				</section>
@@ -66,12 +59,86 @@ Implement Validation
 				<section>
 					<h2>Workshop goal</h2>
 					<p>
-						We will implement Validation. Let's find out what that means.
+						We will implement Validation. This term can be used for different things, even within functional programming. Let's find out what it means for us.
 					</p>
 				</section>
+				<section>
+					<h3>Something might be null!</h3>
+					<pre><code data-trim>
+SomeThing result = repository.findById(42);
+
+if(result != null) {
+	// do something
+}
+
+return result;
+					</code></pre>
+					<pre><code data-trim>
+Option&lt;SomeThing&gt; result = repository.findById(42);
+
+result.foreach(::doSomething);
+
+return result.getOrElse(::getSomeDefaultThing);
+					</code></pre>
+				</section>
+				<section>
+					<h3>But why? Something might fail!</h3>
+					<pre><code data-trim>
+try {
+	SomeThing result = database.lookupById(42);
+	// do something
+	return result;
+} catch(DatabaseExplodedException e) {
+	// handle error
+	return null;
+}
+					</code></pre>
+					<pre><code data-trim>
+Result&lt;Error, SomeThing&gt; result = database.lookupById(42);
+
+result.onSuccess(::doSomeThing);
+result.onFailure(::handleError);
+
+return result.getOrElse(::getSomeDefaultThing);
+					</code></pre>
+				</section>
+				<section>
+					<h3>But, what if multiple things might fail?</h3>
+					<pre><code data-trim>
+List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
+
+for (String host : hosts) {
+	try {
+		SomeThing result = scotty.lookupSomethingOnHost(host);
+		// store result for later, we need them all
+	} catch(ScottyActionFailedException e) {
+		// handle error
+	}
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Our Validation will aggregate errors</h3>
+					<pre><code data-trim>
+List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
+
+List&lt;Validation&lt;Error, SomeThing&gt;&gt; results =
+	hosts.stream().map(::lookupSomethingOnHost);
+
+Validation&lt;Error, List&lt;SomeThing&gt;&gt; composedResults =
+	Validation.sequence(results);
+
+composedResults.onFailure(::handleErrors);
+composedResults.onSuccess(::doSomeThings);
+					</code></pre>
+				</section>
+<!--
+can we type-safely apply input to list of validation functions and map on the result in Java 8?
+-->
 			</div>
 		</div>
-
+        
+		<script src="lib/js/head.min.js"></script>
 		<script src="js/reveal.min.js"></script>
 
 		<script>
@@ -82,7 +149,12 @@ Implement Validation
 				center: true,
 
 				theme: 'moon',
-				transition: 'none'
+				transition: 'none',
+
+				dependencies: [
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+
 			});
 
 		</script>
