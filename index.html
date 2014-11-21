@@ -7,19 +7,12 @@
 
 		<link rel="stylesheet" href="css/reveal.min.css">
 		<link rel="stylesheet" href="css/theme/moon.css">
-		<link rel="stylesheet" href="css/zenburn.css">
+		<link rel="stylesheet" href="css/sunburst.css">
 	</head>
 
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<!--
-Implement Validation
-- to the code!
-- we'll do this as a group - swap on the keyboard every 5 mins or so, but take advice from the whole group, don't hold back.
-- the primary goal is to get the tests passing
-- once that is done, we can go back and improve implementations if we want to
-				-->
 				<section>
 					<h2>Validation Workshop</h2>
 				</section>
@@ -64,36 +57,36 @@ Implement Validation
 				</section>
 				<section>
 					<h3>Something might be null!</h3>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
 SomeThing result = repository.findById(42);
 
 if(result != null) {
-	// do something
+    doSomeThing(result);
 }
 
 return result;
 					</code></pre>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
 Option&lt;SomeThing&gt; result = repository.findById(42);
 
-result.foreach(::doSomething);
+result.foreach(::doSomeThing);
 
 return result.getOrElse(::getSomeDefaultThing);
 					</code></pre>
 				</section>
 				<section>
 					<h3>But why? Something might fail!</h3>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
 try {
-	SomeThing result = database.lookupById(42);
-	// do something
-	return result;
-} catch(DatabaseExplodedException e) {
-	// handle error
-	return null;
+    SomeThing result = database.lookupById(42);
+    doSomeThing(result);
+    return result;
+} catch (DatabaseExplodedException e) {
+    handleError(e);
+    return null;
 }
 					</code></pre>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
 Result&lt;Error, SomeThing&gt; result = database.lookupById(42);
 
 result.onSuccess(::doSomeThing);
@@ -104,37 +97,44 @@ return result.getOrElse(::getSomeDefaultThing);
 				</section>
 				<section>
 					<h3>But, what if multiple things might fail?</h3>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
 List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
 
 for (String host : hosts) {
-	try {
-		SomeThing result = scotty.lookupSomethingOnHost(host);
-		// store result for later, we need them all
-	} catch(ScottyActionFailedException e) {
-		// handle error
-	}
+    try {
+        SomeThing result = scotty.lookupSomethingOnHost(host);
+        // store result for later, we need them all
+    } catch (ScottyActionFailedException e) {
+        handleError(e);	
+    }
 }
+// if we didn't see any error, do something with stored results
 					</code></pre>
 				</section>
 				<section>
 					<h3>Our Validation will aggregate errors</h3>
-					<pre><code data-trim>
+					<pre><code data-trim class="java">
+// something like this, anyway... perhaps need a Collector?
+
 List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
 
-List&lt;Validation&lt;Error, SomeThing&gt;&gt; results =
-	hosts.stream().map(::lookupSomethingOnHost);
+Stream&lt;Validation&lt;Error, SomeThing&gt;&gt; results = hosts.stream().map(::lookupSomethingOnHost);
 
-Validation&lt;Error, List&lt;SomeThing&gt;&gt; composedResults =
-	Validation.sequence(results);
+Validation&lt;Error, List&lt;SomeThing&gt;&gt; composedResults = Validation.sequence(results);
 
 composedResults.onFailure(::handleErrors);
 composedResults.onSuccess(::doSomeThings);
 					</code></pre>
 				</section>
-<!--
-can we type-safely apply input to list of validation functions and map on the result in Java 8?
--->
+				<section>
+					<h3>To the code!</h3>
+					<ul>
+						<li>we'll implement Validation as a group</li>
+						<li>swap who is typing every 5ish minutes</li>
+						<li>take advice from the whole group</li>
+						<li>the primary goal is to get the tests passing</li>
+					</ul>
+				</section>
 			</div>
 		</div>
         
@@ -147,12 +147,14 @@ can we type-safely apply input to list of validation functions and map on the re
 				progress: true,
 				history: true,
 				center: true,
+				
+				width: 1152,
 
 				theme: 'moon',
 				transition: 'none',
 
 				dependencies: [
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+					{ src: 'plugin/highlight/highlight.pack.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
 				]
 
 			});
