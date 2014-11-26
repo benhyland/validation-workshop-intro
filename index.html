@@ -14,20 +14,20 @@
 		<div class="reveal">
 			<div class="slides">
 				<section>
-					<h2>Validation Workshop</h2>
+					<h1>Validation Workshop</h1>
 				</section>
 				<section>
 					<h2>Why are we here?</h2>
 					<p>
 						<ul>
-							<li>improve our skills with Java 8 lambdas</li>
+							<li>practice our skills with Java 8 lambdas</li>
 							<li>improve our ability to recognise common functional patterns</li>
 							<li>implement a functional pattern as an exercise</li>
 						</ul>
 					</p>
 				</section>
 				<section>
-					<h2>What is FP?</h2>
+					<h2>What is functional programming?</h2>
 					<p>
 						As a definition:
 						<ul>
@@ -37,9 +37,9 @@
 					</p>
 				</section>
 				<section>
-					<h2>What is FP?</h2>
+					<h2>What is functional programming?</h2>
 					<p>
-						What do we mean to do? Stuff like:
+						What do we mean to do in our system? Stuff like:
 						<ul>
 							<li>data transformations</li>
 							<li>use meaningful types</li>
@@ -50,91 +50,116 @@
 					</p>
 				</section>
 				<section>
-				<section>
 					<h2>Workshop goal</h2>
-					<p>We will implement Validation.</p>
-					<p>This term can be used for different things, even within functional programming. Let's find out what it means for us.	</p>
+					<p>We will implement the Validation concept.</p>
+					<p>This term can be used for different things, even within functional programming. Let's find out what it means for us.</p>
 				</section>
 				<section>
 					<h3>Something might be null!</h3>
 					<pre><code data-trim class="java">
-SomeThing result = repository.findById(42);
+SomeThing result = repository.getById(42);
 
 if(result != null) {
     doSomeThing(result);
 }
-
-return result;
-					</code></pre>
-					<pre><code data-trim class="java">
-Option&lt;SomeThing&gt; result = repository.findById(42);
-
-result.foreach(::doSomeThing);
-
-return result.getOrElse(::getSomeDefaultThing);
 					</code></pre>
 				</section>
 				<section>
-					<h3>But why? Something might fail!</h3>
+					<h3>Something might be null!</h3>
+					<p>Slightly nicer:</p>
+					<pre><code data-trim class="java">
+Optional&lt;SomeThing&gt; result = repository.findById(42);
+
+result.ifPresent(this::doSomeThing);
+					</code></pre>
+				</section>
+				<section>
+					<h3>Something might fail!</h3>
+					<p>Why might it be null? Perhaps something can break.</p>
 					<pre><code data-trim class="java">
 try {
-    SomeThing result = database.lookupById(42);
+    SomeThing result = service.performDangerousActionForId(42);
     doSomeThing(result);
-    return result;
-} catch (DatabaseExplodedException e) {
+}
+catch (ServiceException e) {
     handleError(e);
-    return null;
 }
 					</code></pre>
+				</section>
+				<section>
+					<h3>Something might fail!</h3>
+					<p>Slightly nicer:</p>
 					<pre><code data-trim class="java">
-Result&lt;Error, SomeThing&gt; result = database.lookupById(42);
+Either&lt;ServiceException, SomeThing&gt; result = service.tryDangerousActionForId(42);
 
-result.onSuccess(::doSomeThing);
-result.onFailure(::handleError);
-
-return result.getOrElse(::getSomeDefaultThing);
+result.ifLeft(this::handleError);
+result.ifRight(this::doSomeThing);
 					</code></pre>
 				</section>
 				<section>
 					<h3>But, what if multiple things might fail?</h3>
+					<p>The remote agent or the service might throw an exception, for several hosts.</p>
 					<pre><code data-trim class="java">
-List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
+List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
+List&lt;SomeOtherThing&gt; results = new ArrayList&lt;&gt;();
+List&lt;Exception&gt; errors = new ArrayList&lt;&gt;();
 
 for (String host : hosts) {
     try {
-        SomeThing result = scotty.lookupSomethingOnHost(host);
-        // store result for later, we need them all
-    } catch (ScottyActionFailedException e) {
-        handleError(e);	
+        SomeThing firstResult = remoteAgent.lookupSomeThingOnHost(host);
+        SomeOtherThing secondResult = service.useSomeThing(firstResult);
+        results.add(secondResult);
+    } catch (RemoteException | ServiceException e) {
+        errors.add(e);
     }
 }
-// if we didn't see any error, do something with stored results
+if(!errors.isEmpty()) {
+    doSomeOtherThings(results);
+}
 					</code></pre>
 				</section>
 				<section>
-					<h3>Our Validation will aggregate errors</h3>
+					<h3>Validation generalises this logic</h3>
+					<p>It might look something like this:</p>
 					<pre><code data-trim class="java">
-// something like this, anyway... perhaps need a Collector?
+List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
 
-List&lt;String&gt; hosts = Arrays.asList(host1, host2, host3, host4);
+List&lt;Validation&lt;Exception, SomeThing&gt;&gt; firstResults =
+        Validation.mapInputs(hosts, remoteAgent::tryLookupSomeThingOnHost);
 
-Stream&lt;Validation&lt;Error, SomeThing&gt;&gt; results = hosts.stream().map(::lookupSomethingOnHost);
+List&lt;Validation&lt;Exception, SomeOtherThing&gt;&gt; secondResults = 
+        Validation.flatMapInputs(firstResults, service::tryUseSomeThing);
 
-Validation&lt;Error, List&lt;SomeThing&gt;&gt; composedResults = Validation.sequence(results);
+Validation&lt;Exception, List&lt;SomeOtherThing&gt;&gt; result = Validation.sequence(secondResults);
 
-composedResults.onFailure(::handleErrors);
-composedResults.onSuccess(::doSomeThings);
+result.ifSuccess(this::doSomeOtherThings);
+result.ifFailure(this::handleAllErrors);
 					</code></pre>
 				</section>
+				<section>
+					<h3>Sum Types</h3>
+					<h4>aka disjoint unions</h4>
+					<p>Optional, Either and Validation are all examples of sum types.</p>
+					<p>A sum type is a data type with several mutually exclusive representations:</p>
+					<ul>
+						<li>Optional: Value is present or absent</li>
+						<li>Either: Value is of one type or the other</li>
+						<li>Validation: Either a list of error values, or a single success value</li>
+					</ul>
 				</section>
 				<section>
 					<h2>To the code!</h2>
 					<ul>
-						<li>we'll implement Validation as a group</li>
-						<li>swap who is typing every 5ish minutes</li>
+						<li>we'll implement Validation in groups (up to 6 or so)</li>
+						<li>swap who is typing every 5-10 minutes</li>
 						<li>take advice from the whole group</li>
 						<li>the primary goal is to get the tests passing</li>
+						<li>pause after each test to make sure the entire group is happy</li>
 					</ul>
+				</section>
+				<section>
+					<h2>Have fun!</h2>
+					<p>http://github.com/benhyland/validation-workshop</p>
 				</section>
 			</div>
 		</div>
@@ -152,7 +177,7 @@ composedResults.onSuccess(::doSomeThings);
 				width: 1200,
 
 				theme: 'moon',
-				transition: 'linear',
+				transition: 'none',
 
 				dependencies: [
 					{ src: 'plugin/highlight/highlight.pack.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
