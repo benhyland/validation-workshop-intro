@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Validation Workshop</title>
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/simple.css">
+		<link rel="stylesheet" href="css/prism.css">
+	</head>
+
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>Validation Workshop</h1>
+				</section>
+				<section>
+					<h2>Why are we here?</h2>
+					<p>
+						<ul>
+							<li>practice our skills with Java 8 lambdas</li>
+							<li>improve our ability to recognise common functional patterns</li>
+							<li>implement a functional pattern as an exercise</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>What is functional programming?</h2>
+					<p>
+						As a definition:
+						<ul>
+							<li>programming with functions</li>
+							<li>referential transparency/equational reasoning</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>What is functional programming?</h2>
+					<p>
+						What do we mean to do in our system? Stuff like:
+						<ul>
+							<li>data transformations</li>
+							<li>use meaningful types</li>
+							<li>reduce scope of nasty bits</li>
+							<li>improve modularity, reuseablility, testability</li>
+							<li>local reasoning</li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>Workshop goal</h2>
+					<p>We will implement the Validation concept.</p>
+					<p>This term can be used for different things, even within functional programming. Let's find out what it means for us.</p>
+				</section>
+				<section>
+					<h3>Something might be null!</h3>
+					<pre><code data-trim class="language-java">
+SomeThing result = repository.getById(42);
+
+if(result != null) {
+    doSomeThing(result);
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Something might be null!</h3>
+					<p>Slightly nicer:</p>
+					<pre><code data-trim class="language-java">
+Optional&lt;SomeThing&gt; result = repository.findById(42);
+
+result.ifPresent(this::doSomeThing);
+					</code></pre>
+				</section>
+				<section>
+					<h3>Something might fail!</h3>
+					<p>Why might it be null? Perhaps something can break.</p>
+					<pre><code data-trim class="language-java">
+try {
+    SomeThing result = service.performDangerousActionForId(42);
+    doSomeThing(result);
+}
+catch (ServiceException e) {
+    handleError(e);
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Something might fail!</h3>
+					<p>Slightly nicer:</p>
+					<pre><code data-trim class="language-java">
+Either&lt;ServiceException, SomeThing&gt; result = service.tryDangerousActionForId(42);
+
+result.ifLeft(this::handleError);
+result.ifRight(this::doSomeThing);
+					</code></pre>
+				</section>
+				<section>
+					<h3>But, what if multiple things might fail?</h3>
+					<p>The remote agent or the service might throw an exception, for several hosts.</p>
+					<pre><code data-trim class="language-java">
+List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
+List&lt;SomeOtherThing&gt; results = new ArrayList&lt;&gt;();
+List&lt;Exception&gt; errors = new ArrayList&lt;&gt;();
+
+for (String host : hosts) {
+    try {
+        SomeThing firstResult = remoteAgent.lookupSomeThingOnHost(host);
+        SomeOtherThing secondResult = service.useSomeThing(firstResult);
+        results.add(secondResult);
+    } catch (RemoteException | ServiceException e) {
+        errors.add(e);
+    }
+}
+if(errors.isEmpty()) {
+    doSomeOtherThings(results);
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Validation generalises this logic</h3>
+					<p>It could look something like this:</p>
+					<pre><code data-trim class="language-java">List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
+
+List&lt;Validation&lt;Exception, SomeThing&gt;&gt; firstResults =
+        Validation.mapInputs(hosts, remoteAgent::tryLookupSomeThingOnHost);
+
+List&lt;Validation&lt;Exception, SomeOtherThing&gt;&gt; secondResults = 
+        Validation.flatMapInputs(firstResults, service::tryUseSomeThing);
+
+Validation&lt;Exception, List&lt;SomeOtherThing&gt;&gt; result = Validation.sequence(secondResults);
+
+result.ifSuccess(this::doSomeOtherThings);
+result.ifFailure(this::handleAllErrors);
+					</code></pre>
+					<p style="font-size: 60%;">which is not much better for readability - but it avoids mutation and branching, and encodes the required structure in the type system</p>
+				</section>
+				<section>
+					<h3>Sum Types</h3>
+					<h4>aka disjoint unions</h4>
+					<p>Optional, Either and Validation are all examples of sum types.</p>
+					<p>A sum type is a data type with several mutually exclusive representations:</p>
+					<ul>
+						<li>Optional: Value is present or absent</li>
+						<li>Either: Value is of one type or the other</li>
+						<li>Validation: Either a list of error values, or a single success value</li>
+					</ul>
+				</section>
+				<section>
+					<h2>To the code!</h2>
+					<ul>
+						<li>we'll implement Validation in pairs or small groups.</li>
+						<li>swap who is typing every 5-10 minutes</li>
+						<li>take advice from the whole group</li>
+						<li>the primary goal is to get the tests passing</li>
+						<li>pause often to ensure the entire group understands what has been done so far</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Have fun!</h2>
+					<p>http://github.com/benhyland/validation-workshop</p>
+				</section>
+			</div>
+		</div>
+        
+		<script src="lib/js/head.min.js"></script>
+		<script src="lib/js/prism.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: false,
+				progress: true,
+				history: true,
+				center: true,
+				
+				width: 1200,
+
+				theme: 'simple',
+				transition: 'none',
+			});
+		</script>
+	</body>
+</html>

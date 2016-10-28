@@ -7,7 +7,7 @@
 
 		<link rel="stylesheet" href="css/reveal.min.css">
 		<link rel="stylesheet" href="css/theme/simple.css">
-		<link rel="stylesheet" href="css/sunburst.css">
+		<link rel="stylesheet" href="css/prism.css">
 	</head>
 
 	<body>
@@ -20,7 +20,7 @@
 					<h2>Why are we here?</h2>
 					<p>
 						<ul>
-							<li>practice our skills with Java 8 lambdas</li>
+							<li>practice our skills with higher-order functions in Ruby</li>
 							<li>improve our ability to recognise common functional patterns</li>
 							<li>implement a functional pattern as an exercise</li>
 						</ul>
@@ -55,86 +55,85 @@
 					<p>This term can be used for different things, even within functional programming. Let's find out what it means for us.</p>
 				</section>
 				<section>
-					<h3>Something might be null!</h3>
-					<pre><code data-trim class="java">
-SomeThing result = repository.getById(42);
+					<h3>Something might be nil!</h3>
+					<pre><code data-trim class="language-ruby">
+result = SomeThing.find(42)
 
-if(result != null) {
-    doSomeThing(result);
-}
+if result
+  do_something_with(result)
+end
 					</code></pre>
 				</section>
 				<section>
-					<h3>Something might be null!</h3>
+					<h3>Something might be nil!</h3>
 					<p>Slightly nicer:</p>
-					<pre><code data-trim class="java">
-Optional&lt;SomeThing&gt; result = repository.findById(42);
+					<pre><code data-trim class="language-ruby">
+result = SomeThing.find(42)
 
-result.ifPresent(this::doSomeThing);
+result.if_not_nil { |r| do_something_with(r) }
+
+# result is optional
 					</code></pre>
 				</section>
 				<section>
 					<h3>Something might fail!</h3>
-					<p>Why might it be null? Perhaps something can break.</p>
-					<pre><code data-trim class="java">
-try {
-    SomeThing result = service.performDangerousActionForId(42);
-    doSomeThing(result);
-}
-catch (ServiceException e) {
-    handleError(e);
-}
+					<p>Why might it be nil? Perhaps something can break.</p>
+					<pre><code data-trim class="language-ruby">
+begin
+  result = SomeThing.find_dangerously(42)
+  do_something_with(result)
+rescue =&gt; error
+  handle_error(error)
+end
 					</code></pre>
 				</section>
 				<section>
 					<h3>Something might fail!</h3>
 					<p>Slightly nicer:</p>
-					<pre><code data-trim class="java">
-Either&lt;ServiceException, SomeThing&gt; result = service.tryDangerousActionForId(42);
+					<pre><code data-trim class="language-ruby">
+result = SomeThing.find_dangerously(42)
 
-result.ifLeft(this::handleError);
-result.ifRight(this::doSomeThing);
+result.if_not_error { |r| do_something_with(r) }
+result.if_error { |e| handle_error(e) }
+
+# result is either success value or error
 					</code></pre>
 				</section>
 				<section>
 					<h3>But, what if multiple things might fail?</h3>
 					<p>The remote agent or the service might throw an exception, for several hosts.</p>
-					<pre><code data-trim class="java">
-List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
-List&lt;SomeOtherThing&gt; results = new ArrayList&lt;&gt;();
-List&lt;Exception&gt; errors = new ArrayList&lt;&gt;();
+					<pre><code data-trim class="language-ruby">hosts = ["host1", "host2", "host3"]
+results = []; errors = []
 
-for (String host : hosts) {
-    try {
-        SomeThing firstResult = remoteAgent.lookupSomeThingOnHost(host);
-        SomeOtherThing secondResult = service.useSomeThing(firstResult);
-        results.add(secondResult);
-    } catch (RemoteException | ServiceException e) {
-        errors.add(e);
-    }
-}
-if(errors.isEmpty()) {
-    doSomeOtherThings(results);
-}
-					</code></pre>
+hosts.each do |host|
+  begin
+    first_result = remote_agent.lookup_something_on_host(host)
+    second_result = service.use_something(first_result)
+    results &lt;&lt; second_result
+  rescue RemoteError, ServiceError =&gt; error
+    errors &lt;&lt; error
+  end
+end
+
+do_some_other_things(results) unless errors</code></pre>
 				</section>
 				<section>
 					<h3>Validation generalises this logic</h3>
 					<p>It might look something like this:</p>
-					<pre><code data-trim class="java">
-List&lt;String&gt; hosts = Arrays.asList("host1", "host2", "host3");
+					<pre><code data-trim class="language-ruby">
+hosts = ["host1", "host2", "host3"]
 
-List&lt;Validation&lt;Exception, SomeThing&gt;&gt; firstResults =
-        Validation.mapInputs(hosts, remoteAgent::tryLookupSomeThingOnHost);
+first_results = Validation.map_inputs(hosts, { |host| remote_agent.lookup_something_on_host(host) })
+second_results = Validation.flat_map_inputs(first_results, { |thing| service.use_something(thing) })
 
-List&lt;Validation&lt;Exception, SomeOtherThing&gt;&gt; secondResults = 
-        Validation.flatMapInputs(firstResults, service::tryUseSomeThing);
+final_result = Validation.sequence(second_results)
+final_result.if_success { |result_list| do_some_other_things(result_list) }
+final_result.if_failure { |all_errors| handle_errors(all_errors) }
 
-Validation&lt;Exception, List&lt;SomeOtherThing&gt;&gt; result = Validation.sequence(secondResults);
-
-result.ifSuccess(this::doSomeOtherThings);
-result.ifFailure(this::handleAllErrors);
+# final_result is either all success values or all errors (aka Validation)
 					</code></pre>
+                                        <p style="font-size: 60%;">which is not much better for readability - but it avoids mutation and branching, and encodes the required structure in a class</p>
+
 				</section>
 				<section>
 					<h3>Sum Types</h3>
@@ -159,12 +158,13 @@ result.ifFailure(this::handleAllErrors);
 				</section>
 				<section>
 					<h2>Have fun!</h2>
-					<p>http://github.com/benhyland/validation-workshop</p>
+					<p>http://github.com/benhyland/ruby-validation</p>
 				</section>
 			</div>
 		</div>
         
 		<script src="lib/js/head.min.js"></script>
+		<script src="lib/js/prism.js"></script>
 		<script src="js/reveal.min.js"></script>
 
 		<script>
@@ -178,14 +178,7 @@ result.ifFailure(this::handleAllErrors);
 
 				theme: 'simple',
 				transition: 'none',
-
-				dependencies: [
-					{ src: 'plugin/highlight/highlight.pack.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-
 			});
-
 		</script>
-
 	</body>
 </html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Functional Programming</title>
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/simple.css">
+		<link href="css/prism.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>Intro to FP</h1>
+				</section>
+				<section>
+					<h2>What is functional programming?</h2>
+					<p>
+						As a definition:
+						<ul>
+							<li>programming with functions</li>
+							<li>programming without <em>side effects</em></li>
+						</ul>
+					</p>
+					<p>What does this mean?</p>
+				</section>
+				<section style="text-align: left;">
+					<h2>What is a function?</h2>
+					<p>Maths-style definition: one input, one output</p>
+					<p>Functions always give an output for any input ('total' vs 'partial')</p>
+					<p>Inputs and outputs can be functions - if so, we call the function 'higher-order'</p>
+				</section>
+				<section>
+					<section>
+						<h1>Side effects</h1>
+						<p>
+							when a function does anything other than computing a result:
+							<ul>
+								<li>Modifying a variable, field or data structure</li>
+								<li>Throwing an exception</li>
+								<li>Starting a new thread</li>
+								<li>I/O: reading from or writing to the console, files, sockets etc</li>
+							</ul>
+						</p>
+					</section>
+					<section style="text-align: left;">
+						<p>Effects are context-sensitive.</p>
+						<p>Not all effects need to be controlled in every context.</p>
+						<p>Other things which are also arguably effects are not commonly tracked - for example, allocating memory.</p>
+						<p>Effects are <em>observable behavior</em> from some point of view determined by the runtime.</p>
+						<p>In a runtime designed for some high-security algorithmics, time taken to execute might be an effect since it is observable via timing attacks.</p>
+						<p>So, how do we get anything done? We encode our effects as values and pass them to the runtime so it can perform them for us.</p>
+						<p>We end up with a pure-functional program wrapped up by an effect-performing runtime.</p>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Benefits</h2>
+						<p>
+							<ul>
+								<li>Easy to reason about</li>
+								<li>Better modularisation</li>
+								<li>Easier to test</li>
+							</ul>
+						</p>
+					</section>
+					<section>
+						<h2>What does</h2>
+						<h1>easy to reason about</h1>
+						<h2>mean, then?</h2>
+						<p style="text-align: left;">
+							when functions do the same thing whenever they are called
+							<ul>
+								<li>Can't use or modify external variables (constants are OK)</li>
+								<li>Can't have side effects</li>
+								<li>Always produce the same output given the same input</li>
+							</ul>
+						</p>
+					</section>
+					<section style="text-align: left;">
+						<h2>Referential Transparency</h2>
+						<p>a property of expressions, not just functions</p>
+						<p>
+							an expression <em>e</em> is referentially transparent if, for any program,
+							any occurances of <em>e</em> can be replaced with the evaluation value of <em>e</em>
+							without changing the meaning of the program
+						</p>
+					</section>
+					<section>
+						<h2>Substitution Model/Equational Reasoning</h2>
+						<ul>
+							<li>mentally substituting expressions for values to reduce to a simpler form</li>
+							<li>thinking about code is like algebra</li>
+						</ul>
+						<p style="text-align: left; font-size: 60%;">
+							When expressions are RT, we can think about what our program does by calculating what values small
+							expressions have and substituting the results into bigger expressions. We just repeat the process
+							until we come up with the value we are interested in (called reduction).
+						</p>
+						<p style="text-align: left; font-size: 60%;">
+							This is analogous to solving an algebraic equation - you only need to look at the local stuff to solve a piece.
+							Once a piece is solved, it stays solved and the knowledge gained can be applied elsewhere.
+							In the FP world this property is called Equational Reasoning.
+						</p>
+						<p style="text-align: left; font-size: 60%;">
+							Some people care less about the 'equational' and more that reasoning is 'local'
+							- you don't need to scroll much or look at multiple files to understand what a function does
+							- you just look at its args and body.
+						</p>
+					</section>
+				</section>
+				<section>
+					<h2>Testing and modularisation</h2>
+					<ul>
+						<li>input/output testing is less fiddly and brittle than mocks and stubs</li>
+						<li>function composition produces new useful functions (especially with HOFs)</li>
+						<li>not much distinction between functions and programs</li>
+					</ul>
+					<p>None of this works well in the presence of side effects.</p>
+				</section>
+				<section>
+					<h2>What does functional style code look like?</h2>
+					<h3>(you're already doing lots of it)</h3>
+					<p style="text-align: left">- Tends to be pretty short</p>
+					<p style="text-align: left">- Expressions rather than statements</p>
+					<p style="text-align: left">- Decompose problems into chains of functions</p>
+					<p style="text-align: left">- Order of execution not important</p>
+					<p style="text-align: left">- Immutable data</p>
+					<p style="text-align: left">All are consequences of designing languages without side effects.</p>
+				</section>
+				<section>
+					<h3>Haskell</h3>
+					<pre><code data-trim class="language-haskell">
+&gt; let rightTriangles = [(a, b, c) |
+				c &lt;- [1..10], b &lt;- [1..c], a &lt;- [1..b],
+				a^2 + b^2 == c^2,
+				a + b + c == 24]
+&gt; rightTriangles
+&gt; [(6,8,10)]
+					</code></pre>
+				</section>
+				<section>
+					<h3>Java</h3>
+					<pre><code data-trim class="language-java">
+users
+    .stream()
+    .filter(u -&gt; shouldNotifyFor(u, message))
+    .map(u -&gt; u.getEmailAddress())
+    .forEach(email -&gt; deliver(message, email));
+					</code></pre>
+				</section>
+				<section>
+					<h3>Scala</h3>
+					<pre><code data-trim class="language-scala">
+val (nextState, outputMessages) = process(state, input)
+for {
+    m &lt;- outputMessages
+    json = m.asJson
+    c &lt;- nextState.outputChannelsFor(m)
+} {
+    c.emit(json)
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Ruby</h3>
+					<pre><code data-trim class="language-ruby">
+expiries = records.flat_map do |record|
+  lookup_items(item_type, record).map do |item|
+    [item.name, item.expiry, item.expiry_reason]
+  end
+end
+expiries.select { |expiry| Date.parse(expiry[1]) &lt;= reference_date }
+					</code></pre>
+				</section>
+				<section>
+					<h2>Advantages and disadvantages</h2>
+					<ul>
+						<li>More modular, easily decomposeable and testable</li>
+						<li>Need to debug (rather than test) less often</li>
+						<li>Modelling system invariants can be easier</li>
+						<li>Makes it easy to focus on correctness</li>
+						<li>Avoids having to understand non-local state changes</li>
+						<li>Higher level of asbtraction</li>
+						<li>Smaller communities</li>
+						<li>Time/space performance can be hard to predict in advance</li>
+						<li>Time investment to learn</li>
+						<li>Can be harder to debug</li>
+						<li>Not well suited to problems with lots of external state changes</li>
+					</ul>
+				</section>
+				<section>
+					<h1>Next steps</h1>
+					<p>Go read and learn!</p>
+					<p>Talk to colleagues, chat on slack, share resources, practice during normal work.</p>
+					<p>Some links to get started with:
+					<ul>
+						<li><a href="https://maryrosecook.com/blog/post/a-practical-introduction-to-functional-programming">Intro to FP (Mary Rose Cook)</a></li>
+						<li><a href="https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf">Why FP matters (Philip Wadler)</a></li>
+						<li><a href="https://medium.freecodecamp.com/what-does-it-mean-when-code-is-easy-to-reason-about-4e6f63eb386f#.nceyuplkl">"Easy to reason about" (Preethi Kasireddy)</a></li>
+						<li><a href="http://pchiusano.github.io/2014-05-21/what-effects-are-worth-tracking.html">What effects are worth tracking (Paul Chiusano)</a></li>
+					</ul></p>
+					<p style="text-align: left">There are several MOOCs if you have the time: <a href="https://www.mooc-list.com/tags/functional-programming">FP MOOC list</a>
+					<p style="text-align: left">and many, many books, new languages, and libraries.</p>
+					<p style="text-align: right">Have fun exploring!</p>
+				</section>
+				<section>
+					<h1>Workshop!</h1>
+				</section>
+			</div>
+		</div>
+        
+		<script src="lib/js/prism.js"></script>
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: false,
+				progress: true,
+				history: true,
+				center: true,
+				
+				width: 1450,
+
+				theme: 'simple',
+				transition: 'none'
+			});
+
+		</script>
+
+	</body>
+</html>
